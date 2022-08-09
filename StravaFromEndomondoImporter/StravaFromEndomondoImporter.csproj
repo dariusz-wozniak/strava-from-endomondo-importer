@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="AspNet.Security.OAuth.Strava" Version="6.0.6" />
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Flurl.Http" Version="3.2.4" />
   </ItemGroup>
 
   <ItemGroup>
