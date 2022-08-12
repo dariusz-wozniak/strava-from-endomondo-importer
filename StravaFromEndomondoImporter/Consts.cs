@@ -8,5 +8,5 @@ public static class Consts
     public static string ResponseType => "code";
     public static string Scope => "read_all,profile:read_all,activity:read_all,activity:write";
     public static string AuthorizeUrl => $"{Host}/oauth/authorize";
-    public static string NameSuffix => "(Imported)";
+    public static string NameSuffix => "(Imported from Endomondo)";
 }

@@ -6,8 +6,7 @@ try
     if (options.SkipScanning) logger.Information("Skipping scanning");
     else await FileScanner.Scan(options, logger);
 
-    var url =
-        $"{AuthorizeUrl}?client_id={options.ClientId}&response_type={ResponseType}&redirect_uri={RedirectUri}&scope={Scope}";
+    var url = $"{AuthorizeUrl}?client_id={options.ClientId}&response_type={ResponseType}&redirect_uri={RedirectUri}&scope={Scope}";
     url = url.Replace("&", "^&");
 
     if (!BrowserRunner.RunBrowser(url)) return;
@@ -26,35 +25,18 @@ try
 
     var accessToken = Parse.FromJson(tokenRs, "access_token").ToString();
     var refreshToken = Parse.FromJson(tokenRs, "refresh_token").ToString();
-
-    using var store = ActivitiesDataStore.Create(options);
-    var collection = store.GetCollection<Activity>();
-    var activities = collection.AsQueryable()
-                               .Where(x => !x.IsCompleted && x.Status == Status.AddedToDataStoreWithDetails)
-                               .ToList();
-
+    
+    // TODO: add start of loop x batch here
+    
     // Uploading:
-    logger.Information("Uploading {ActivitiesCount} activities", activities.Count);
-    foreach (var activity in activities)
-    {
-        var rs = await Api.AppendPathSegments("uploads")
-                           .WithOAuthBearerToken(accessToken)
-                           .PostMultipartAsync(content =>
-                               content.AddFile("file", activity.Path)
-                                      .AddString("name", $"Workout {NameSuffix}")
-                                      .AddString("data_type", "tcx")
-                           )
-                           .ReceiveString();
-
-        activity.StravaUploadId = Parse.FromJson(rs, "id").ToString();
-        activity.StravaError = Parse.FromJson(rs, "error").ToString();
-        activity.StravaStatus = Parse.FromJson(rs, "status").ToString();
-        activity.StravaActivityId = Parse.FromJson(rs, "activity_id").ToString();
-        activity.Status = Status.UploadSuccessful;
-
-        await collection.ReplaceOneAsync(activity.Id, activity);
-        logger.Information("Uploaded {ActivityFilename} successfully. Full response: {Rs}", activity.Filename, rs);
-    }
+    // var toBeUploaded = ActivitiesDataStore.GetActivities(options, Status.AddedToDataStoreWithDetails, take: Configuration.BatchSize);
+    // logger.Information("Uploading {ActivitiesCount} activities", toBeUploaded.Count);
+    // foreach (var activity in toBeUploaded) await Strava.UploadActivity(accessToken, activity, logger, options);
+    
+    // Updating:
+    var toBeUpdated = ActivitiesDataStore.GetActivities(options, Status.UploadSuccessful, take: Configuration.BatchSize);
+    logger.Information("Updating {ActivitiesCount} activities", toBeUpdated.Count);
+    foreach(var activity in toBeUpdated) await Strava.UpdateActivity(accessToken, activity, logger, options);
 }
 catch (Exception e)
 {
@@ -63,20 +45,9 @@ catch (Exception e)
     Environment.Exit(0);
 }
 
+
 // for later:
 /*
-
-var rs = await apiHost.AppendPathSegments("uploads")
-                   .WithOAuthBearerToken(accessToken)
-                   .AllowAnyHttpStatus()
-                   .PostMultipartAsync(content => 
-                       content.AddFile("file", tcx)
-                              .AddString("name", "👀 Uploaded from api")
-                              .AddString("data_type", "tcx")
-                   )
-                   .ReceiveString();
-
-var id = JObject.Parse(rs)["id"].ToString();
 
 // TODO:
 // Get uploads

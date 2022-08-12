@@ -25,6 +25,7 @@ public class Activity
      public string StravaId { get; set; }
      public string StravaError { get; set; }
      public string StravaStatus { get; set; }
+     public string StravaName { get; set; }
      public bool IsCompleted { get; set; }
 }
 
@@ -34,6 +35,5 @@ public enum Status
      StartedProcessingFile = 1,
      AddedToDataStoreWithDetails = 2,
      UploadSuccessful = 3,
-     UploadUnsuccessful = 4,
-     UploadAndUpdateSuccessful = 5
+     UploadAndUpdateSuccessful = 4
 }
