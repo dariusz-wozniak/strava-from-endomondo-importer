@@ -18,4 +18,15 @@ public static class ActivitiesDataStore
 
         return activities.ToList();
     }
+
+    public static (int processed, int total) GetStats(Options options)
+    {
+        var ds = Create(options);
+        var collection = ds.GetCollection<Activity>();
+
+        var total = collection.Count;
+        var processed = collection.AsQueryable().Count(x => x.IsCompleted);
+
+        return (processed, total);
+    }
 }
