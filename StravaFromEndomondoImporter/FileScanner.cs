@@ -2,12 +2,12 @@
 
 public static class FileScanner
 {
-    public static async Task Scan(string filesWithTcxPath, Logger logger)
+    public static async Task Scan(Options options, Logger logger)
     {
-        using var store = new DataStore(Path.Combine(filesWithTcxPath, "endomondo-to-strava-data-store.json"));
+        using var store = ActivitiesDataStore.Create(options);
         var activities = store.GetCollection<Activity>();
         
-        var files = Directory.EnumerateFiles(filesWithTcxPath, "*.tcx", SearchOption.AllDirectories).ToList();
+        var files = Directory.EnumerateFiles(options.Path, "*.tcx", SearchOption.AllDirectories).ToList();
         logger.Information("Found {FilesCount} files", files.Count);
         foreach (var item in files.Select((value, i) => new { value, i }))
         {
@@ -40,8 +40,8 @@ public static class FileScanner
             activity.Status = Status.AddedToDataStoreWithDetails;
 
             await activities.ReplaceOneAsync(activity.Id, activity);
-            logger.Information(
-                $"[{item.i}]: {activity.Id} {activity.Path} {activity.TcxId} {activity.TcxActivityType} {activity.HasTrackPoints}");
+            
+            logger.Information($"[{item.i}]: {activity.Id} {activity.Path} {activity.TcxId} {activity.TcxActivityType} {activity.HasTrackPoints}");
         }
     }
 }

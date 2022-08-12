@@ -21,6 +21,7 @@ public class Activity
      public bool HasTrackPoints { get; set; }
      public string StravaActivityType { get; set; }
      public string StravaActivityId { get; set; }
+     public string StravaUploadId { get; set; }
      public string StravaId { get; set; }
      public string StravaError { get; set; }
      public string StravaStatus { get; set; }
@@ -30,10 +31,9 @@ public class Activity
 public enum Status
 {
      NotSet = 0,
-     StartedProcessingFile,
-     AddedToDataStoreWithDetails,
-     UploadInvoked,
-     UploadSuccessful,
-     UploadUnsuccessful,
-     UploadAndUpdateSuccessful
+     StartedProcessingFile = 1,
+     AddedToDataStoreWithDetails = 2,
+     UploadSuccessful = 3,
+     UploadUnsuccessful = 4,
+     UploadAndUpdateSuccessful = 5
 }
