@@ -35,12 +35,13 @@ public static class Strava
         var activityId = Parse.FromJson(upload, "activity_id").ToString();
         if (string.IsNullOrWhiteSpace(activityId))
         {
-            logger.Warning("Failed to update {ActivityFilename} to Strava. Full response: {Upload}", activity.Filename, upload);
+            logger.Warning("Failed to update {ActivityFilename} to Strava. Full response: {Upload}", activity.Filename,
+                upload);
             return;
         }
 
         var stravaSportType = Map(activity.TcxActivityType);
-        
+
         var update = await Api.AppendPathSegments("activities", activityId)
                               .WithOAuthBearerToken(accessToken)
                               .PutJsonAsync(new
@@ -65,6 +66,24 @@ public static class Strava
 
         await collection.ReplaceOneAsync(activity.Id, activity);
         logger.Information("Updated {ActivityFilename} successfully! Full response: {Rs}", activity.Filename, update);
+    }
+
+    public static async Task<(string accessToken, string refreshToken)> GetTokens(Options options, string code)
+    {
+        var rs = await Host.AppendPathSegments("oauth", "token")
+                           .PostUrlEncodedAsync(new Dictionary<string, string>
+                           {
+                               { "client_id", options.ClientId },
+                               { "client_secret", options.ClientSecret },
+                               { "code", code },
+                               { "grant_type", "authorization_code" },
+                           })
+                           .ReceiveString();
+
+        var accessToken = Parse.FromJson(rs, "access_token").ToString();
+        var refreshToken = Parse.FromJson(rs, "refresh_token").ToString();
+        
+        return (accessToken, refreshToken);
     }
 
     private static string Map(string tcxActivityType) =>
