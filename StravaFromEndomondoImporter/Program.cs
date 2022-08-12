@@ -5,6 +5,7 @@ var store = new DataStore(Path.Combine(options.Path, "endomondo-to-strava-data-s
 var activities = store.GetCollection<Activity>();
 
 var files = Directory.EnumerateFiles(options.Path, "*.tcx", SearchOption.AllDirectories).ToList();
+logger.Information("Found {FilesCount} files", files.Count);
 foreach (var item in files.Select((value, i) => new {value, i}))
 {
     var path = item.value;
@@ -32,9 +33,10 @@ foreach (var item in files.Select((value, i) => new {value, i}))
     activity.TcxActivityType = ((IDictionary<string, object>)tcxactivity)["@Sport"].ToString();
     activity.HasTrackPoints = hasTrackPoints;
     activity.IsCompleted = !hasTrackPoints;
+    activity.Status = Status.AddedToDataStoreWithDetails;
 
     await activities.ReplaceOneAsync(activity.Id, activity);
-    logger.Information($"[{item.i}]: {activity.Path} {activity.TcxId} {activity.TcxActivityType} {activity.HasTrackPoints}");
+    logger.Information($"[{item.i}]: {activity.Id} {activity.Path} {activity.TcxId} {activity.TcxActivityType} {activity.HasTrackPoints}");
 }
 
 Environment.Exit(0);
