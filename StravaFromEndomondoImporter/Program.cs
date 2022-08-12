@@ -1,48 +1,40 @@
 ﻿var options = Parser.Default.ParseArguments<Options>(args).Value;
 
-var logFile = options.Path;
-var logger = new LoggerConfiguration()
-             .WriteTo.File(Path.Combine(logFile, "endomondo-to-strava.txt"), LogEventLevel.Debug)
-             .CreateLogger();
-
-const string apiHost = "https://www.strava.com/api/v3/";
-const string redirectUri = "http://localhost/strava_exchange_token";
-const string responseType = "code";
-const string scope = "read_all,profile:read_all,activity:read_all,activity:write";
-const string authorizeUrl = "https://www.strava.com/oauth/authorize";
-
-var sports = new HashSet<string>();
-int withTrack = 0;
-int withNoTrack = 0;
+var logger = Logging.Setup(options.Path);
+var store = new DataStore(Path.Combine(options.Path, "endomondo-to-strava-data-store.json"));
+var activities = store.GetCollection<Activity>();
 
 var files = Directory.EnumerateFiles(options.Path, "*.tcx", SearchOption.AllDirectories).ToList();
 foreach (var item in files.Select((value, i) => new {value, i}))
 {
-    var file = item.value;
-    var xdoc = XDocument.Load(file);
+    var path = item.value;
+    var fileName = Path.GetFileName(path);
+
+    if (activities.AsQueryable().Any(x => x.Path == item.value && (x.IsCompleted || x.Status != Status.StartedProcessingFile)))
+    {
+        logger.Information("{Path} is already in store", path);
+        continue;
+    }
+
+    var activity = new Activity(fileName, Status.StartedProcessingFile) { Path = path };
+    await activities.InsertOneAsync(activity);
+
+    var xdoc = XDocument.Load(path);
     var jsonText = JsonConvert.SerializeXNode(xdoc);
     dynamic d = JsonConvert.DeserializeObject<ExpandoObject>(jsonText);
 
-    var activity = d.TrainingCenterDatabase.Activities.Activity;
-    var sport = ((IDictionary<string, object>)activity)["@Sport"].ToString();
+    var tcxactivity = d.TrainingCenterDatabase.Activities.Activity;
 
-    sports.Add(sport);
-    
-    var id = activity.Id.ToString();
-    
-    var track = activity.Lap.Track;
-    bool hasTrack = track != null;
-    
-    if (hasTrack) {
-        withTrack++;
-    } else {
-        withNoTrack++;
-    }
+    var hasTrackPoints = tcxactivity.Lap.Track != null;
 
-    var lap = activity.Lap;
-    DateTime startTime = DateTime.Parse(((IDictionary<string, object>)lap)["@StartTime"].ToString());
-    
-    logger.Information($"{id} {sport} {startTime} {hasTrack}");
+    activity.TcxId = tcxactivity.Id.ToString();
+    activity.StartTime = DateTime.Parse(((IDictionary<string, object>)tcxactivity.Lap)["@StartTime"].ToString());
+    activity.TcxActivityType = ((IDictionary<string, object>)tcxactivity)["@Sport"].ToString();
+    activity.HasTrackPoints = hasTrackPoints;
+    activity.IsCompleted = !hasTrackPoints;
+
+    await activities.ReplaceOneAsync(activity.Id, activity);
+    logger.Information($"[{item.i}]: {activity.Path} {activity.TcxId} {activity.TcxActivityType} {activity.HasTrackPoints}");
 }
 
 Environment.Exit(0);
