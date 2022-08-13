@@ -32,13 +32,13 @@ try
         await policy.ExecuteAndCaptureAsync(async () =>
         {
             // Upload:
-            var toBeUploaded = ActivitiesDataStore.GetActivities(options, Status.AddedToDataStoreWithDetails, take: Configuration.BatchSize);
+            var toBeUploaded = ActivitiesDataStore.GetActivities(options, Status.AddedToDataStoreWithDetails, take: Config.BatchSize);
             logger.Information("Uploading {ActivitiesCount} activities", toBeUploaded.Count);
             foreach (var activity in toBeUploaded) await Strava.UploadActivity(accessToken, activity, logger, options);
 
             // Update:
             var toBeUpdated =
-                ActivitiesDataStore.GetActivities(options, Status.UploadSuccessful, take: Configuration.BatchSize);
+                ActivitiesDataStore.GetActivities(options, Status.UploadSuccessful, take: Config.BatchSize);
             logger.Information("Updating {ActivitiesCount} activities", toBeUpdated.Count);
             foreach (var activity in toBeUpdated) await Strava.UpdateActivity(accessToken, activity, logger, options);
 
