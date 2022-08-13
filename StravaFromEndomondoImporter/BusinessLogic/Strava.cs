@@ -1,4 +1,8 @@
-﻿namespace StravaFromEndomondoImporter;
+﻿using StravaFromEndomondoImporter.Common;
+using StravaFromEndomondoImporter.DataStore;
+using StravaFromEndomondoImporter.Models;
+
+namespace StravaFromEndomondoImporter.BusinessLogic;
 
 public static class Strava
 {
@@ -35,8 +39,7 @@ public static class Strava
         var activityId = Parse.FromJson(upload, "activity_id").ToString();
         if (string.IsNullOrWhiteSpace(activityId))
         {
-            logger.Warning("Failed to update {ActivityFilename} to Strava. Full response: {Upload}", activity.Filename,
-                upload);
+            logger.Warning("Failed to update {ActivityFilename} to Strava. Full response: {Upload}", activity.Filename, upload);
             return;
         }
 
@@ -89,9 +92,9 @@ public static class Strava
     private static string Map(string tcxActivityType) =>
         tcxActivityType switch
         {
-            "Running" => "Run",
-            "Biking" => "Ride",
-            "Other" => "Walk",
-            _ => "Walk"
+            Sports.Run.Tcx => Sports.Run.Strava,
+            Sports.Biking.Tcx => Sports.Biking.Strava,
+            Sports.Other.Tcx => Sports.Walk.Strava,
+            _ => Sports.Walk.Strava
         };
 }

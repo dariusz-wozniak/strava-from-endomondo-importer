@@ -1,4 +1,4 @@
-﻿namespace StravaFromEndomondoImporter;
+﻿namespace StravaFromEndomondoImporter.Infrastructure;
 
 public static class Logging
 {

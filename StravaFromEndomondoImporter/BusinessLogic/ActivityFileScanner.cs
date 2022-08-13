@@ -1,6 +1,9 @@
-﻿namespace StravaFromEndomondoImporter;
+﻿using StravaFromEndomondoImporter.DataStore;
+using StravaFromEndomondoImporter.Models;
 
-public static class FileScanner
+namespace StravaFromEndomondoImporter.BusinessLogic;
+
+public static class ActivityFileScanner
 {
     public static async Task Scan(Options options, Logger logger)
     {

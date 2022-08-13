@@ -1,6 +1,6 @@
 ﻿using Polly.Retry;
 
-namespace StravaFromEndomondoImporter;
+namespace StravaFromEndomondoImporter.Infrastructure;
 
 public static class Policies
 {

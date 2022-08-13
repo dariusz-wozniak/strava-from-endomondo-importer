@@ -1,16 +1,23 @@
-﻿var options = Parser.Default.ParseArguments<Options>(args).Value;
+﻿using StravaFromEndomondoImporter.BusinessLogic;
+using StravaFromEndomondoImporter.Configuration;
+using StravaFromEndomondoImporter.DataStore;
+using StravaFromEndomondoImporter.Infrastructure;
+using StravaFromEndomondoImporter.Models;
+
+var options = Parser.Default.ParseArguments<Options>(args).Value;
 
 var logger = Logging.Setup(options.Path);
 
 try
 {
     if (options.SkipScanning) logger.Information("Skipping scanning");
-    else await FileScanner.Scan(options, logger);
+    else await ActivityFileScanner.Scan(options, logger);
+
+    if (options.SyncWithEndomondoJsons) EndomondoJsonSync.Scan(options, logger);
 
     ShowStats(options, logger);
 
-    var url =
-        $"{AuthorizeUrl}?client_id={options.ClientId}&response_type={ResponseType}&redirect_uri={RedirectUri}&scope={Scope}";
+    var url = $"{AuthorizeUrl}?client_id={options.ClientId}&response_type={ResponseType}&redirect_uri={RedirectUri}&scope={Scope}";
     url = url.Replace("&", "^&");
 
     if (!BrowserRunner.RunBrowser(url)) return;

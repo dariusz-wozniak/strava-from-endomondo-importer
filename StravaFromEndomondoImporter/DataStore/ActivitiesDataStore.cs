@@ -1,10 +1,12 @@
-﻿namespace StravaFromEndomondoImporter;
+﻿using StravaFromEndomondoImporter.Models;
+
+namespace StravaFromEndomondoImporter.DataStore;
 
 public static class ActivitiesDataStore
 {
-    public static DataStore Create(Options options)
+    public static JsonFlatFileDataStore.DataStore Create(Options options)
     {
-        return new DataStore(Path.Combine(options.Path, "endomondo-to-strava-data-store.json"));
+        return new JsonFlatFileDataStore.DataStore(Path.Combine(options.Path, "endomondo-to-strava-data-store.json"));
     }
 
     public static List<Activity> GetActivities(Options options, Status status, int? take = null)

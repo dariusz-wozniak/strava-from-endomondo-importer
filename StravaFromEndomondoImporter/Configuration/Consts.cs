@@ -1,4 +1,4 @@
-﻿namespace StravaFromEndomondoImporter;
+﻿namespace StravaFromEndomondoImporter.Configuration;
 
 public static class Consts
 {

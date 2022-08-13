@@ -1,4 +1,4 @@
-﻿namespace StravaFromEndomondoImporter;
+﻿namespace StravaFromEndomondoImporter.Models;
 
 public class Activity
 {
@@ -22,7 +22,6 @@ public class Activity
      public string StravaActivityType { get; set; }
      public string StravaActivityId { get; set; }
      public string StravaUploadId { get; set; }
-     public string StravaId { get; set; }
      public string StravaError { get; set; }
      public string StravaStatus { get; set; }
      public string StravaName { get; set; }

@@ -1,4 +1,4 @@
-﻿namespace StravaFromEndomondoImporter;
+﻿namespace StravaFromEndomondoImporter.Common;
 
 public static class Parse
 {
