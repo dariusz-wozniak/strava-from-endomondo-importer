@@ -5,7 +5,7 @@ var logger = Logging.Setup(options.Path);
 try
 {
     // Step 1: Scan .TCX files and build/update database
-    if (options.SkipScanning) logger.Information("Skipping scanning");
+    if (options.SkipScanning) logger.Information("Skipping scanning of TCX files");
     else await ActivityFileScanner.Scan(options, logger);
 
     // Step 2: Update ActivityType table with Endomondo data
@@ -29,6 +29,8 @@ try
     {
         await policy.ExecuteAndCaptureAsync(async () =>
         {
+            ShowStats(options, logger);
+            
             // Step 5: Upload to Strava
             var toBeUploaded = ActivitiesDataStore.GetActivities(options, Status.AddedToDataStoreWithDetails, take: Config.BatchSize);
             logger.Information("Uploading {ActivitiesCount} activities", toBeUploaded.Count);
@@ -58,10 +60,8 @@ catch (Exception e)
     Environment.Exit(0);
 }
 
-Console.ReadKey();
-
 void ShowStats(Options o, Logger l)
 {
-    var (processed, uploaded, total) = ActivitiesDataStore.GetStats(o);
-    l.Information("Processed {Processed} of {Total} activities ({Percentage}%). Uploaded so far: {Uploaded}", processed, total, processed * 100 / total, uploaded);
+    var (allStrava, uploadedToStrava, total) = ActivitiesDataStore.GetStats(o);
+    l.Information($"Processed {uploadedToStrava} of {allStrava} Strava activities ({uploadedToStrava*100/allStrava}%)");
 }
