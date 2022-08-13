@@ -18,14 +18,7 @@ try
     var code = Console.ReadLine()?.Trim() ?? string.Empty;
 
     var (accessToken, refreshToken) = await Strava.GetTokens(options, code);
-
-    var policy = Policy.Handle<FlurlHttpException>(e => e.StatusCode == (int)HttpStatusCode.TooManyRequests)
-                       .WaitAndRetryAsync(retryCount: 20, retryAttempt => TimeSpan.FromSeconds(retryAttempt * 10),
-                           (exception, span) =>
-                           {
-                               logger.Warning(
-                                   $"Retrying in {span.TotalSeconds} seconds... Exception: {exception?.Message}");
-                           });
+    var policy = Policies.RetryPolicy(logger);
 
     while (true)
     {
