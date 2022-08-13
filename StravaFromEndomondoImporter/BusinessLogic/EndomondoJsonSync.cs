@@ -59,7 +59,7 @@ public static class EndomondoJsonSync
             }
             else if (string.IsNullOrWhiteSpace(activity.StravaActivityType))
             {
-                logger.Information($"NOT_ON_STRAVA [{filename}] Activity not yet uploaded to Strava");
+                logger.Information($"NOT_ON_STRAVA [{filename}] Activity not found on Strava");
             }
             else if (!string.Equals(activity.StravaActivityType, mappedActivityType, StringComparison.OrdinalIgnoreCase))
             {
@@ -71,15 +71,21 @@ public static class EndomondoJsonSync
                 logger.Information($"MATCH [{filename}] Strava activity type {activity.StravaActivityType} match Endomondo activity type {sport}");
             }
 
-            var syncStatus = new SyncStatus(file)
+            if (needsUpdateInStrava)
             {
-                EndomondoActivityType = sport,
-                StravaActivityId = activity.StravaActivityId,
-                StravaActivityType = activity.StravaActivityType,
-                DataStoreActivityId = activity.Id,
-                TcxFilePath = activity.Path,
-                NeedsUpdateInStrava = needsUpdateInStrava,
-            };
+                var syncStatus = new SyncStatus(file)
+                {
+                    EndomondoActivityType = sport,
+                    StravaActivityId = activity.StravaActivityId,
+                    StravaActivityType = activity.StravaActivityType,
+                    DataStoreActivityId = activity.Id,
+                    TcxFilePath = activity.Path,
+                    NeedsUpdateInStrava = needsUpdateInStrava,
+                };
+
+                if (syncStatuses.AsQueryable().Any(x => x.Id == syncStatus.Id)) syncStatuses.ReplaceOne(syncStatus.Id, syncStatus);
+                else syncStatuses.InsertOne(syncStatus);
+            }
         }
     }
 
@@ -103,7 +109,9 @@ public static class EndomondoJsonSync
 /// <summary>Endomondo JSON to Strava sync status</summary>
 public class SyncStatus
 {
-    public SyncStatus(string fullPath)
+    public SyncStatus() {}
+    
+    public SyncStatus(string fullPath) : this()
     {
         EndomondoFilePath = fullPath ?? throw new ArgumentNullException(nameof(fullPath));
         EndomondoFilename = Path.GetFileName(fullPath);
