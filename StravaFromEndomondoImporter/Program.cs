@@ -43,7 +43,7 @@ try
             logger.Information("Uploading {ActivitiesCount} activities", toBeUploaded.Count);
             foreach (var activity in toBeUploaded) await Strava.UploadActivity(accessToken, activity, logger, options);
 
-            // Step 6: Update Strava activities (set gear ID to null, etc.)
+            // Step 7: Update Strava activities (set gear ID to null, etc.)
             var toBeUpdated = ActivitiesDataStore.GetActivities(options, Status.UploadSuccessful, take: Config.BatchSize);
             logger.Information("Updating {ActivitiesCount} activities", toBeUpdated.Count);
             foreach (var activity in toBeUpdated) await Strava.UpdateActivity(accessToken, activity, logger, options);
