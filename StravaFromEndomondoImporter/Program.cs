@@ -9,7 +9,8 @@ try
 
     ShowStats(options, logger);
 
-    var url = $"{AuthorizeUrl}?client_id={options.ClientId}&response_type={ResponseType}&redirect_uri={RedirectUri}&scope={Scope}";
+    var url =
+        $"{AuthorizeUrl}?client_id={options.ClientId}&response_type={ResponseType}&redirect_uri={RedirectUri}&scope={Scope}";
     url = url.Replace("&", "^&");
 
     if (!BrowserRunner.RunBrowser(url)) return;
@@ -17,24 +18,36 @@ try
     var code = Console.ReadLine()?.Trim() ?? string.Empty;
 
     var (accessToken, refreshToken) = await Strava.GetTokens(options, code);
-    
+
+    var policy = Policy.Handle<FlurlHttpException>(e => e.StatusCode == (int)HttpStatusCode.TooManyRequests)
+                       .WaitAndRetryAsync(retryCount: 20, retryAttempt => TimeSpan.FromSeconds(retryAttempt * 10),
+                           (exception, span) =>
+                           {
+                               logger.Warning(
+                                   $"Retrying in {span.TotalSeconds} seconds... Exception: {exception?.Message}");
+                           });
+
     while (true)
     {
-        // Upload:
-        var toBeUploaded = ActivitiesDataStore.GetActivities(options, Status.AddedToDataStoreWithDetails, take: Configuration.BatchSize);
-        logger.Information("Uploading {ActivitiesCount} activities", toBeUploaded.Count);
-        foreach (var activity in toBeUploaded) await Strava.UploadActivity(accessToken, activity, logger, options);
-
-        // Update:
-        var toBeUpdated = ActivitiesDataStore.GetActivities(options, Status.UploadSuccessful, take: Configuration.BatchSize);
-        logger.Information("Updating {ActivitiesCount} activities", toBeUpdated.Count);
-        foreach (var activity in toBeUpdated) await Strava.UpdateActivity(accessToken, activity, logger, options);
-
-        if (!toBeUpdated.Any() && !toBeUploaded.Any())
+        await policy.ExecuteAndCaptureAsync(async () =>
         {
-            logger.Information("PROCESSED ALL! 🎉 - No activities to upload or update");
-            ShowStats(options, logger);
-        }
+            // Upload:
+            var toBeUploaded = ActivitiesDataStore.GetActivities(options, Status.AddedToDataStoreWithDetails, take: Configuration.BatchSize);
+            logger.Information("Uploading {ActivitiesCount} activities", toBeUploaded.Count);
+            foreach (var activity in toBeUploaded) await Strava.UploadActivity(accessToken, activity, logger, options);
+
+            // Update:
+            var toBeUpdated =
+                ActivitiesDataStore.GetActivities(options, Status.UploadSuccessful, take: Configuration.BatchSize);
+            logger.Information("Updating {ActivitiesCount} activities", toBeUpdated.Count);
+            foreach (var activity in toBeUpdated) await Strava.UpdateActivity(accessToken, activity, logger, options);
+
+            if (!toBeUpdated.Any() && !toBeUploaded.Any())
+            {
+                logger.Information("PROCESSED ALL! 🎉 - No activities to upload or update");
+                ShowStats(options, logger);
+            }
+        });
     }
 }
 catch (Exception e)
@@ -49,5 +62,6 @@ Console.ReadKey();
 void ShowStats(Options o, Logger l)
 {
     var (processed, total) = ActivitiesDataStore.GetStats(o);
-    l.Information("Processed {Processed} of {Total} activities ({Percentage}%)", processed, total, processed * 100 / total);
+    l.Information("Processed {Processed} of {Total} activities ({Percentage}%)", processed, total,
+        processed * 100 / total);
 }

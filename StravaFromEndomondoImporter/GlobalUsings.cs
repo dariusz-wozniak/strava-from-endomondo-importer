@@ -2,6 +2,7 @@
 
 global using System.Diagnostics;
 global using System.Dynamic;
+global using System.Net;
 global using System.Runtime.InteropServices;
 global using System.Text.Json;
 global using System.Xml;
@@ -12,6 +13,7 @@ global using Flurl.Http;
 global using JsonFlatFileDataStore;
 global using Newtonsoft.Json;
 global using Newtonsoft.Json.Linq;
+global using Polly;
 global using Serilog;
 global using Serilog.Core;
 global using Serilog.Events;
