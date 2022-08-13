@@ -94,7 +94,7 @@ public static class EndomondoJsonSync
         var needsUpdate = syncStatuses.AsQueryable().Where(x => x.NeedsUpdateInStrava == true).ToList();
         logger.Information("Found {NeedsUpdateCount} activities that need to be updated in Strava", needsUpdate.Count);
         
-        foreach (var syncStatus in needsUpdate.Take(Config.BatchSize))
+        foreach (var syncStatus in needsUpdate.Take(BatchSizeForEndomondoActivitySync))
         {
             var update = await Api.AppendPathSegments("activities", syncStatus.StravaActivityId)
                                   .WithOAuthBearerToken(accessToken)

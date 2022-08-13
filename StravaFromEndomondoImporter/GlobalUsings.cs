@@ -25,6 +25,7 @@ global using StravaFromEndomondoImporter.Configuration;
 global using StravaFromEndomondoImporter.DataStore;
 global using StravaFromEndomondoImporter.Infrastructure;
 global using StravaFromEndomondoImporter.Models;
+global using static StravaFromEndomondoImporter.Configuration.Config;
 global using Options = StravaFromEndomondoImporter.Configuration.Options;
 global using static StravaFromEndomondoImporter.Configuration.Consts;
 global using Activity = StravaFromEndomondoImporter.Models.Activity;
