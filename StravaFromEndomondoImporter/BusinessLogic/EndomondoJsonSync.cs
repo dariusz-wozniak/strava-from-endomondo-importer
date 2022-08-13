@@ -101,7 +101,7 @@ public static class EndomondoJsonSync
                                   .PutJsonAsync(new
                                   {
                                       sport_type = syncStatus.ExpectedStravaActivityType,
-                                      name = $"{syncStatus.ExpectedStravaActivityType} {NameSuffix}",
+                                      name = $"{syncStatus.EndomondoActivityType} {NameSuffix}",
                                   })
                                   .ReceiveString();
             
