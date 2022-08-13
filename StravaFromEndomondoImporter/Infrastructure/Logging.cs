@@ -6,7 +6,7 @@ public static class Logging
     {
         var logFile = logPath;
         var logger = new LoggerConfiguration()
-                     .WriteTo.File(Path.Combine(logFile, "endomondo-to-strava.txt"), restrictedToMinimumLevel: LogEventLevel.Verbose)
+                     .WriteTo.File(Path.Combine(logFile, "endomondo-to-strava.txt"), restrictedToMinimumLevel: LogEventLevel.Verbose, rollingInterval: RollingInterval.Day)
                      .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Verbose)
                      .CreateLogger();
 
