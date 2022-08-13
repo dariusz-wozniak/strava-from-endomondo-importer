@@ -2,11 +2,9 @@
 
 public static class EndomondoJsonSync
 {
-    public static void Scan(Options options, Logger logger)
+    public static async Task Scan(Options options, Logger logger)
     {
-        using var syncStatusDataStore =
-            new JsonFlatFileDataStore.DataStore(Path.Combine(options.Path,
-                "endomondo-to-strava-data-sync-status.json"));
+        using var syncStatusDataStore = GetSyncStatusDataStore(options);
         using var activitiesDataStore = ActivitiesDataStore.Create(options);
 
         var syncStatuses = syncStatusDataStore.GetCollection<SyncStatus>();
@@ -23,7 +21,7 @@ public static class EndomondoJsonSync
 
             try
             {
-                var content = File.ReadAllText(file);
+                var content = await File.ReadAllTextAsync(file);
                 var array = JArray.Parse(content);
                 var children = array.Children<JObject>();
                 var props = children.Properties();
@@ -46,11 +44,10 @@ public static class EndomondoJsonSync
                 continue;
             }
             
-            var mappedActivityType = MapToStravaActivityTypeOrNull(sport);
-
-            bool needsUpdateInStrava = false;
+            var stravaMappedActivityType = MapToStravaActivityTypeOrNull(sport);
+            var needsUpdateInStrava = false;
             
-            if (mappedActivityType == null)
+            if (stravaMappedActivityType == null)
             {
                 logger.Information($"NO_MATCH [{filename}] Cannot match Endomondo activity type {sport} to Strava activity type {activity.StravaActivityType}");
             }
@@ -58,7 +55,7 @@ public static class EndomondoJsonSync
             {
                 logger.Information($"NOT_ON_STRAVA [{filename}] Activity not found on Strava");
             }
-            else if (!string.Equals(activity.StravaActivityType, mappedActivityType, StringComparison.OrdinalIgnoreCase))
+            else if (!string.Equals(activity.StravaActivityType, stravaMappedActivityType, StringComparison.OrdinalIgnoreCase))
             {
                 logger.Information($"👀 MISMATCH! [{filename}] Strava activity type {activity.StravaActivityType} does not match Endomondo activity type {sport}");
                 needsUpdateInStrava = true;
@@ -74,16 +71,50 @@ public static class EndomondoJsonSync
                 {
                     EndomondoActivityType = sport,
                     StravaActivityId = activity.StravaActivityId,
-                    StravaActivityType = activity.StravaActivityType,
+                    CurrentStravaActivityType = activity.StravaActivityType,
+                    ExpectedStravaActivityType = stravaMappedActivityType,
                     DataStoreActivityId = activity.Id,
                     TcxFilePath = activity.Path,
                     NeedsUpdateInStrava = needsUpdateInStrava,
                 };
 
-                if (syncStatuses.AsQueryable().Any(x => x.Id == syncStatus.Id)) syncStatuses.ReplaceOne(syncStatus.Id, syncStatus);
-                else syncStatuses.InsertOne(syncStatus);
+                if (syncStatuses.AsQueryable().Any(x => x.Id == syncStatus.Id)) await syncStatuses.ReplaceOneAsync(syncStatus.Id, syncStatus);
+                else await syncStatuses.InsertOneAsync(syncStatus);
             }
         }
+    }
+
+    public static async Task<bool> Update(Options options, Logger logger, string accessToken)
+    {
+        using var syncStatusDataStore = GetSyncStatusDataStore(options);
+        var syncStatuses = syncStatusDataStore.GetCollection<SyncStatus>();
+
+        var needsUpdate = syncStatuses.AsQueryable().Where(x => x.NeedsUpdateInStrava == true).ToList();
+        logger.Information("Found {NeedsUpdateCount} activities that need to be updated in Strava", needsUpdate.Count);
+        
+        foreach (var syncStatus in needsUpdate.Take(Config.BatchSize))
+        {
+            var update = await Api.AppendPathSegments("activities", syncStatus.StravaActivityId)
+                                  .WithOAuthBearerToken(accessToken)
+                                  .PutJsonAsync(new
+                                  {
+                                      sport_type = syncStatus.ExpectedStravaActivityType,
+                                      name = $"{syncStatus.ExpectedStravaActivityType} {NameSuffix}",
+                                  })
+                                  .ReceiveString();
+            
+            logger.Information($"Updated activity {syncStatus.StravaActivityId} from {syncStatus.CurrentStravaActivityType} to {syncStatus.ExpectedStravaActivityType}");
+            syncStatus.UpdatedInStrava = true;
+            
+            await syncStatuses.ReplaceOneAsync(syncStatus.Id, syncStatus);
+        }
+
+        return needsUpdate.Any();
+    }
+
+    private static JsonFlatFileDataStore.DataStore GetSyncStatusDataStore(Options options)
+    {
+        return new JsonFlatFileDataStore.DataStore(Path.Combine(options.Path, "endomondo-to-strava-data-sync-status.json"));
     }
 
     private static string MapToStravaActivityTypeOrNull(string endomondoSport)
