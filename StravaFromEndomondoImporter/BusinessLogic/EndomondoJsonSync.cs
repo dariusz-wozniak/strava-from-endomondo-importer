@@ -142,7 +142,6 @@ public static class EndomondoJsonSync
             "dancing" => Sports.Other.Strava,
             "ice_skating" => "IceSkate",
             "kayaking" => "Kayaking",
-            "other" => Sports.Other.Strava,
             "riding" => Sports.Other.Strava,
             "rowing" => "Rowing",
             "rowing_indoor" => "Rowing",
