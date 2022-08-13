@@ -67,8 +67,11 @@ public static class EndomondoJsonSync
 
             if (needsUpdateInStrava)
             {
-                var syncStatus = new SyncStatus(file)
+                var syncStatus = new SyncStatus()
                 {
+                    Id = file.GetHashCode(),
+                    EndomondoFilePath = file,
+                    EndomondoFilename = filename,
                     EndomondoActivityType = sport,
                     StravaActivityId = activity.StravaActivityId,
                     CurrentStravaActivityType = activity.StravaActivityType,
@@ -78,8 +81,7 @@ public static class EndomondoJsonSync
                     NeedsUpdateInStrava = needsUpdateInStrava,
                 };
 
-                if (syncStatuses.AsQueryable().Any(x => x.Id == syncStatus.Id)) await syncStatuses.ReplaceOneAsync(syncStatus.Id, syncStatus);
-                else await syncStatuses.InsertOneAsync(syncStatus);
+                await syncStatuses.ReplaceOneAsync(syncStatus.Id, syncStatus, upsert: true);
             }
         }
     }
