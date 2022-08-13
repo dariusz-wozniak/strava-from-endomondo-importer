@@ -22,7 +22,7 @@ public static class Strava
         activity.StravaActivityId = Parse.FromJson(rs, "activity_id").ToString();
         activity.Status = Status.UploadSuccessful;
 
-        await collection.ReplaceOneAsync(activity.Id, activity);
+        await collection.ReplaceOneAsync(activity.Id, activity, upsert: true);
         logger.Information("Uploaded {ActivityFilename} successfully. Full response: {Rs}", activity.Filename, rs);
     }
 
@@ -63,7 +63,7 @@ public static class Strava
         activity.Status = Status.UploadAndUpdateSuccessful;
         activity.IsCompleted = true;
 
-        await collection.ReplaceOneAsync(activity.Id, activity);
+        await collection.ReplaceOneAsync(activity.Id, activity, upsert: true);
         logger.Information("Updated {ActivityFilename} successfully! Full response: {Rs}", activity.Filename, update);
     }
 

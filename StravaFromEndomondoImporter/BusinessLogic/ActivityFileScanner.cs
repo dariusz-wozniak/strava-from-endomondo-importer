@@ -39,7 +39,7 @@ public static class ActivityFileScanner
             activity.IsCompleted = !hasTrackPoints;
             activity.Status = Status.AddedToDataStoreWithDetails;
 
-            await activities.ReplaceOneAsync(activity.Id, activity);
+            await activities.ReplaceOneAsync(activity.Id, activity, upsert: true);
             
             logger.Information($"[{item.i}]: {activity.Id} {activity.Path} {activity.TcxId} {activity.TcxActivityType} {activity.HasTrackPoints}");
         }

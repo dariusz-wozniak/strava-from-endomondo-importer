@@ -108,7 +108,7 @@ public static class EndomondoJsonSync
             logger.Information($"Updated activity {syncStatus.StravaActivityId} from {syncStatus.CurrentStravaActivityType} to {syncStatus.ExpectedStravaActivityType}");
             syncStatus.UpdatedInStrava = true;
             
-            await syncStatuses.ReplaceOneAsync(syncStatus.Id, syncStatus);
+            await syncStatuses.ReplaceOneAsync(syncStatus.Id, syncStatus, upsert: true);
         }
 
         return needsUpdate.Any();
