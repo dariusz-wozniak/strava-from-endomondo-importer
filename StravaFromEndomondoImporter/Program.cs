@@ -61,7 +61,6 @@ Console.ReadKey();
 
 void ShowStats(Options o, Logger l)
 {
-    var (processed, total) = ActivitiesDataStore.GetStats(o);
-    l.Information("Processed {Processed} of {Total} activities ({Percentage}%)", processed, total,
-        processed * 100 / total);
+    var (processed, uploaded, total) = ActivitiesDataStore.GetStats(o);
+    l.Information("Processed {Processed} of {Total} activities ({Percentage}%). Uploaded so far: {Uploaded}", processed, total, processed * 100 / total, uploaded);
 }
