@@ -1,10 +1,4 @@
-﻿using StravaFromEndomondoImporter.BusinessLogic;
-using StravaFromEndomondoImporter.Configuration;
-using StravaFromEndomondoImporter.DataStore;
-using StravaFromEndomondoImporter.Infrastructure;
-using StravaFromEndomondoImporter.Models;
-
-var options = Parser.Default.ParseArguments<Options>(args).Value;
+﻿var options = Parser.Default.ParseArguments<Options>(args).Value;
 
 var logger = Logging.Setup(options.Path);
 

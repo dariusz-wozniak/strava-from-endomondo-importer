@@ -31,6 +31,7 @@ public static class Sports
 
     public static class Hike
     {
+        public const string Endomondo = "Hiking";
         public const string Strava = "Hike";
     }
 }

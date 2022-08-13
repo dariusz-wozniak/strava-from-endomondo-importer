@@ -1,6 +1,4 @@
-﻿using StravaFromEndomondoImporter.Models;
-
-namespace StravaFromEndomondoImporter.DataStore;
+﻿namespace StravaFromEndomondoImporter.DataStore;
 
 public static class ActivitiesDataStore
 {

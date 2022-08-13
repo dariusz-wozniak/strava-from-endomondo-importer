@@ -1,7 +1,4 @@
-﻿using StravaFromEndomondoImporter.DataStore;
-using StravaFromEndomondoImporter.Models;
-
-namespace StravaFromEndomondoImporter.BusinessLogic;
+﻿namespace StravaFromEndomondoImporter.BusinessLogic;
 
 public static class ActivityFileScanner
 {

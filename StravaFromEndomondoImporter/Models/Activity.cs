@@ -27,12 +27,3 @@ public class Activity
      public string StravaName { get; set; }
      public bool IsCompleted { get; set; }
 }
-
-public enum Status
-{
-     NotSet = 0,
-     StartedProcessingFile = 1,
-     AddedToDataStoreWithDetails = 2,
-     UploadSuccessful = 3,
-     UploadAndUpdateSuccessful = 4
-}
