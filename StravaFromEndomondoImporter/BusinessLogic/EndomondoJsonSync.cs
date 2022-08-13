@@ -125,12 +125,35 @@ public static class EndomondoJsonSync
 
         return endomondoSport.ToLowerInvariant() switch
         {
+            // ↓ lower-cased strings here
             "running" => Sports.Run.Strava,
             "cycling_sport" => Sports.Biking.Strava,
             "cycling_transportation" => Sports.Biking.Strava,
             "mountain_biking" => Sports.Biking.Strava,
             "walking" => Sports.Walk.Strava,
             "hiking" => Sports.Hike.Strava,
+            "aerobics" => Sports.Other.Strava,
+            "badminton" => Sports.Other.Strava,
+            "basketball" => Sports.Other.Strava,
+            "beach_volley" => Sports.Other.Strava,
+            "climbing" => "RockClimbing",
+            "cross_training" => "Crossfit",
+            "crossfit" => "Crossfit",
+            "dancing" => Sports.Other.Strava,
+            "ice_skating" => "IceSkate",
+            "kayaking" => "Kayaking",
+            "other" => Sports.Other.Strava,
+            "riding" => Sports.Other.Strava,
+            "rowing" => "Rowing",
+            "rowing_indoor" => "Rowing",
+            "sailing" => "Sail",
+            "skiing_cross_country" => "BackcountrySki",
+            "skiing_downhill" => "AlpineSki",
+            "soccer" => Sports.Other.Strava,
+            "swimming" => "Swim",
+            "tennis" => Sports.Other.Strava,
+            "treadmill_running" => Sports.Run.Strava,
+            "treadmill_walking" => Sports.Walk.Strava,
             _ => null
         };
     }
