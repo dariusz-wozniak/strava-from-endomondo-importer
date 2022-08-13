@@ -40,7 +40,7 @@ public static class EndomondoJsonSync
 
             if (activity == null)
             {
-                logger.Information($"Didn't find corresponding activity {filename} in Activities Data Store, meaning - these might not be uploaded to Strava");
+                logger.Information($"Didn't find corresponding activity {filename} in Activities Data Store, meaning - these won't be uploaded to Strava");
                 continue;
             }
             
