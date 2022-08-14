@@ -7,6 +7,7 @@ public interface IJsonParser
 
 public class JsonParser : IJsonParser
 {
+    // TODO: replace by System.Text.Json https://stackoverflow.com/q/58271901/297823
     public object FromJson(string json, string key)
     {
         if (string.IsNullOrWhiteSpace(json)) return string.Empty;
