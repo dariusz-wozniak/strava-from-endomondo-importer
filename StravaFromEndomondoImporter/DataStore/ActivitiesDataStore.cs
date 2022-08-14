@@ -19,15 +19,16 @@ public static class ActivitiesDataStore
         return activities.ToList();
     }
 
-    public static (int allStrava, int uploadedToStrava, int total) GetStats(Options options)
+    public static (int allStrava, int uploadToStrava, int uploadedAndUpdatedToStrava, int total) GetStats(Options options)
     {
         var ds = Create(options);
         var collection = ds.GetCollection<Activity>();
 
         var total = collection.Count;
         var allToProcess = collection.AsQueryable().Count(x => x.HasTrackPoints);
-        var uploadedToStrava = collection.AsQueryable().Count(x => x.HasTrackPoints && x.IsCompleted);
+        var uploadedToStrava = collection.AsQueryable().Count(x => x.Status is Status.UploadSuccessful or Status.UploadAndUpdateSuccessful);
+        var uploadedAndUpdatedToStrava = collection.AsQueryable().Count(x => x.HasTrackPoints && x.IsCompleted);
 
-        return (allToProcess, uploadedToStrava, total);
+        return (allToProcess, uploadedToStrava, uploadedAndUpdatedToStrava, total);
     }
 }
