@@ -1,10 +1,27 @@
 ﻿namespace StravaFromEndomondoImporter.BusinessLogic;
 
-public static class Strava
+public interface IStravaService
 {
-    public static async Task UploadActivity(string accessToken, Activity activity, Logger logger, Options options)
+    Task UploadActivity(string accessToken, Activity activity, Logger logger, Options options);
+    Task UpdateActivity(string accessToken, Activity activity, Logger logger, Options options);
+    Task<(string accessToken, string refreshToken)> GetTokens(Options options, string code);
+}
+
+public class StravaServiceService : IStravaService
+{
+    private readonly IJsonParser _jsonParser;
+    private readonly IActivitiesDataStore _activitiesDataStore;
+
+    public StravaServiceService(IJsonParser jsonParser,
+                                IActivitiesDataStore activitiesDataStore)
     {
-        var rs = await Api.AppendPathSegments("uploads")
+        _jsonParser = jsonParser ?? throw new ArgumentNullException(nameof(jsonParser));
+        _activitiesDataStore = activitiesDataStore ?? throw new ArgumentNullException(nameof(activitiesDataStore));
+    }
+
+    public async Task UploadActivity(string accessToken, Activity activity, Logger logger, Options options)
+    {
+        var rs = await Api.AppendPathSegment("uploads")
                           .WithOAuthBearerToken(accessToken)
                           .PostMultipartAsync(content =>
                               content.AddFile("file", activity.Path)
@@ -13,26 +30,26 @@ public static class Strava
                           )
                           .ReceiveString();
 
-        using var store = ActivitiesDataStore.Create(options);
+        using var store = _activitiesDataStore.Create(options);
         var collection = store.GetCollection<Activity>();
 
-        activity.StravaUploadId = Parse.FromJson(rs, "id").ToString();
-        activity.StravaError = Parse.FromJson(rs, "error").ToString();
-        activity.StravaStatus = Parse.FromJson(rs, "status").ToString();
-        activity.StravaActivityId = Parse.FromJson(rs, "activity_id").ToString();
+        activity.StravaUploadId = _jsonParser.FromJson(rs, "id").ToString();
+        activity.StravaError = _jsonParser.FromJson(rs, "error").ToString();
+        activity.StravaStatus = _jsonParser.FromJson(rs, "status").ToString();
+        activity.StravaActivityId = _jsonParser.FromJson(rs, "activity_id").ToString();
         activity.Status = Status.UploadSuccessful;
 
         await collection.ReplaceOneAsync(activity.Id, activity, upsert: true);
         logger.Information("Uploaded {ActivityFilename} successfully. Full response: {Rs}", activity.Filename, rs);
     }
 
-    public static async Task UpdateActivity(string accessToken, Activity activity, Logger logger, Options options)
+    public async Task UpdateActivity(string accessToken, Activity activity, Logger logger, Options options)
     {
         var upload = await Api.AppendPathSegments("uploads", activity.StravaUploadId)
                               .WithOAuthBearerToken(accessToken)
                               .GetStringAsync();
 
-        var activityId = Parse.FromJson(upload, "activity_id").ToString();
+        var activityId = _jsonParser.FromJson(upload, "activity_id").ToString();
         if (string.IsNullOrWhiteSpace(activityId))
         {
             logger.Warning("Failed to update {ActivityFilename} to Strava. Full response: {Upload}", activity.Filename, upload);
@@ -52,14 +69,14 @@ public static class Strava
                               })
                               .ReceiveString();
 
-        using var store = ActivitiesDataStore.Create(options);
+        using var store = _activitiesDataStore.Create(options);
         var collection = store.GetCollection<Activity>();
 
-        activity.StravaActivityId = Parse.FromJson(update, "id").ToString();
+        activity.StravaActivityId = _jsonParser.FromJson(update, "id").ToString();
         activity.StravaError = null;
         activity.StravaStatus = null;
-        activity.StravaActivityType = Parse.FromJson(update, "sport_type").ToString();
-        activity.StravaName = Parse.FromJson(update, "name").ToString();
+        activity.StravaActivityType = _jsonParser.FromJson(update, "sport_type").ToString();
+        activity.StravaName = _jsonParser.FromJson(update, "name").ToString();
         activity.Status = Status.UploadAndUpdateSuccessful;
         activity.IsCompleted = true;
 
@@ -67,7 +84,7 @@ public static class Strava
         logger.Information("Updated {ActivityFilename} successfully! Full response: {Rs}", activity.Filename, update);
     }
 
-    public static async Task<(string accessToken, string refreshToken)> GetTokens(Options options, string code)
+    public async Task<(string accessToken, string refreshToken)> GetTokens(Options options, string code)
     {
         var rs = await Host.AppendPathSegments("oauth", "token")
                            .PostUrlEncodedAsync(new Dictionary<string, string>
@@ -79,13 +96,13 @@ public static class Strava
                            })
                            .ReceiveString();
 
-        var accessToken = Parse.FromJson(rs, "access_token").ToString();
-        var refreshToken = Parse.FromJson(rs, "refresh_token").ToString();
+        var accessToken = _jsonParser.FromJson(rs, "access_token").ToString();
+        var refreshToken = _jsonParser.FromJson(rs, "refresh_token").ToString();
         
         return (accessToken, refreshToken);
     }
 
-    private static string Map(string tcxActivityType) =>
+    private string Map(string tcxActivityType) =>
         tcxActivityType switch
         {
             Sports.Run.Tcx => Sports.Run.Strava,

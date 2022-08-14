@@ -7,14 +7,15 @@ public static class BrowserRunner
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             Console.WriteLine("Now, browser will run. Please authorize app and copy the content of code URL query parameter (website will be HTTP Error 404 Not Found)");
-            Process.Start(new ProcessStartInfo
+            using (Process.Start(new ProcessStartInfo
             {
                 FileName = "cmd.exe",
                 Arguments = $"/c start {url}",
                 UseShellExecute = true,
-            });
-
-            return true;
+            }))
+            {
+                return true;
+            }
         }
         else
         {

@@ -1,8 +1,13 @@
 ﻿namespace StravaFromEndomondoImporter.Common;
 
-public static class Parse
+public interface IJsonParser
 {
-    public static object FromJson(string json, string key)
+    object FromJson(string json, string key);
+}
+
+public class JsonParser : IJsonParser
+{
+    public object FromJson(string json, string key)
     {
         if (string.IsNullOrWhiteSpace(json)) return string.Empty;
         if (key == null) throw new ArgumentNullException(nameof(key));

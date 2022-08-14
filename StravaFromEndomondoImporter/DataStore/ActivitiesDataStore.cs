@@ -1,13 +1,20 @@
 ﻿namespace StravaFromEndomondoImporter.DataStore;
 
-public static class ActivitiesDataStore
+public interface IActivitiesDataStore
 {
-    public static JsonFlatFileDataStore.DataStore Create(Options options)
+    JsonFlatFileDataStore.DataStore Create(Options options);
+    List<Activity> GetActivities(Options options, Status status, int? take = null);
+    (int allStrava, int uploadToStrava, int uploadedAndUpdatedToStrava, int total) GetStats(Options options);
+}
+
+public class ActivitiesDataStore : IActivitiesDataStore
+{
+    public JsonFlatFileDataStore.DataStore Create(Options options)
     {
         return new JsonFlatFileDataStore.DataStore(Path.Combine(options.Path, "endomondo-to-strava-data-store.json"));
     }
 
-    public static List<Activity> GetActivities(Options options, Status status, int? take = null)
+    public List<Activity> GetActivities(Options options, Status status, int? take = null)
     {
         using var store = Create(options);
         var collection = store.GetCollection<Activity>();
@@ -19,9 +26,9 @@ public static class ActivitiesDataStore
         return activities.ToList();
     }
 
-    public static (int allStrava, int uploadToStrava, int uploadedAndUpdatedToStrava, int total) GetStats(Options options)
+    public (int allStrava, int uploadToStrava, int uploadedAndUpdatedToStrava, int total) GetStats(Options options)
     {
-        var ds = Create(options);
+        using var ds = Create(options);
         var collection = ds.GetCollection<Activity>();
 
         var total = collection.Count;

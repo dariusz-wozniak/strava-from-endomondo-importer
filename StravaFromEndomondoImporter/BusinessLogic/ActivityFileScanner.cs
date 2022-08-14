@@ -1,10 +1,22 @@
 ﻿namespace StravaFromEndomondoImporter.BusinessLogic;
 
-public static class ActivityFileScanner
+public interface IActivityFileScanner
 {
-    public static async Task Scan(Options options, Logger logger)
+    Task Scan(Options options, Logger logger);
+}
+
+public class ActivityFileScanner : IActivityFileScanner
+{
+    private readonly IActivitiesDataStore _activitiesDataStore;
+
+    public ActivityFileScanner(IActivitiesDataStore activitiesDataStore)
     {
-        using var store = ActivitiesDataStore.Create(options);
+        _activitiesDataStore = activitiesDataStore ?? throw new ArgumentNullException(nameof(activitiesDataStore));
+    }
+
+    public async Task Scan(Options options, Logger logger)
+    {
+        using var store = _activitiesDataStore.Create(options);
         var activities = store.GetCollection<Activity>();
         
         var files = Directory.EnumerateFiles(options.Path, "*.tcx", SearchOption.AllDirectories).ToList();
