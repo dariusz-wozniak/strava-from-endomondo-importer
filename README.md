@@ -42,9 +42,9 @@ In order to get your client ID and client secret, you need to register an applic
 The app uses the following steps to import data:
 
 1. Scan for *.TCX files in the path.
-   1. Files state are being maintained in the JSON data store (`endomondo-to-strava-data-store.json`).
+   1. Files state are being maintained in the local JSON data store (`endomondo-to-strava-data-store.json`).
    2. If the `--skipscan` or `-s` option is set, the app will not scan for .TCX files. That can be useful if the scan process was already done.
-2. The browser should opened with Authorize option. Click on the Authorize and then you will be redirected to the 404 localhost page. Copy the code from the page and paste it into the command line and then press Enter.
+2. The browser should be opened with Authorize option. Click on the Authorize button and then you will be redirected to the 404 localhost page. Copy the code from the page and paste it into the command line and then press Enter.
    1. For example, for URL:
    
    ```
