@@ -7,12 +7,12 @@ public interface IStravaService
     Task<(string accessToken, string refreshToken)> GetTokens(Options options, string code);
 }
 
-public class StravaServiceService : IStravaService
+public class StravaService : IStravaService
 {
     private readonly IJsonParser _jsonParser;
     private readonly IActivitiesDataStore _activitiesDataStore;
 
-    public StravaServiceService(IJsonParser jsonParser,
+    public StravaService(IJsonParser jsonParser,
                                 IActivitiesDataStore activitiesDataStore)
     {
         _jsonParser = jsonParser ?? throw new ArgumentNullException(nameof(jsonParser));
