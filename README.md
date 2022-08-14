@@ -2,7 +2,7 @@
 
 **Strava-From-Endomondo-Importer** is the console application that imports data from Endomondo files to your Strava profile.
 
-That's a quick-and-dirty application that I wrote for myself as a single run app, but decided to publish it, so you can use that for your import. It does support a lot and works gently with thousands a lot, but be aware about its limitations (see the Limitations section);
+That's a quick-and-dirty application that I wrote for myself as a single run app, but decided to publish it, so you can use that for your import. It does support a lot and works gently with thousands a lot, but be aware about its limitations (see the Limitations section).
 
 # Usage
 
