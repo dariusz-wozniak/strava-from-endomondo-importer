@@ -97,6 +97,8 @@ See the following methods to modify:
 
 # Versions
 
+See https://github.com/dariusz-wozniak/strava-from-endomondo-importer/releases
+
 # License
 
 # Logo
