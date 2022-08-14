@@ -56,6 +56,11 @@ public class EndomondoJsonSync : IEndomondoJsonSync
                 logger.Information($"Didn't find corresponding activity {filename} in Activities Data Store, meaning - these won't be uploaded to Strava");
                 continue;
             }
+            if (activity.Status != Status.UploadAndUpdateSuccessful)
+            {
+                logger.Information($"Activity is not yet updated by {nameof(StravaService)}, skipping {filename}");
+                continue;
+            }
 
             var stravaMappedActivityType = MapToStravaActivityTypeOrNull(sport);
             var needsUpdateInStrava = false;
