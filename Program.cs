@@ -64,6 +64,7 @@ try
             {
                 logger.Information("PROCESSED ALL! 🎉 - No activities to upload or update");
                 ShowStats(options, logger);
+                Environment.Exit(0);
             }
         });
     }
