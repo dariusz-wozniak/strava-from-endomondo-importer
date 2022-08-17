@@ -139,7 +139,7 @@ public class EndomondoJsonSync : IEndomondoJsonSync
         var syncStatuses = syncStatusDataStore.GetCollection<SyncStatus>();
 
         var needsUpdate = syncStatuses.AsQueryable().Where(x => x.NeedsUpdateInStrava == true).ToList();
-        logger.Information("Found {NeedsUpdateCount} activities that needs to be updated in Strava (clear gear ID, etc.)", needsUpdate.Count);
+        logger.Information("Found {NeedsUpdateCount} activities that needs to be updated in Strava (activity type Endomondo vs. Strava mismatched)", needsUpdate.Count);
 
         foreach (var syncStatus in needsUpdate.Take(BatchSizeForEndomondoActivitySync))
         {
