@@ -110,10 +110,6 @@ See the following methods to modify:
 * `StravaService.Map`
 * `EndomondoJsonSync.MapToStravaActivityTypeOrNull`
 
-# 🔢 Versions
-
-See https://github.com/dariusz-wozniak/strava-from-endomondo-importer/releases
-
 # ⚖ License
 
 The app is published as-is. The authors do not take any responsibility for losing or altering any of data.
