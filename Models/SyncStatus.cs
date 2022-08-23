@@ -9,9 +9,11 @@ public class SyncStatus
     public string TcxFilePath { get; set; }
     public int? DataStoreActivityId { get; set; }
     public string StravaActivityId { get; set; }
+    public string StravaUploadId { get; set; }
     public string CurrentStravaActivityType { get; set; }
     public string ExpectedStravaActivityType { get; set; }
     public string EndomondoActivityType { get; set; }
     public bool? NeedsUpdateInStrava { get; set; }
     public bool UpdatedInStrava { get; set; }
+    public string Message { get; set; }
 }

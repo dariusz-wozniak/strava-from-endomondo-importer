@@ -59,11 +59,12 @@ try
                 await endomondoJsonSync.Scan(options, logger);
                 needsToSyncActivities = await endomondoJsonSync.Update(options, logger, accessToken);
             }
-
+            
             if (!toBeUpdated.Any() && !toBeUploaded.Any() && !needsToSyncActivities)
             {
                 logger.Information("PROCESSED ALL! 🎉 - No activities to upload or update");
                 ShowStats(options, logger);
+                Environment.Exit(0);
             }
         });
     }
@@ -78,6 +79,6 @@ catch (Exception e)
 void ShowStats(Options o, Logger l)
 {
     var stats = activitiesDataStore.GetStats(o);
-    l.Information($"Uploaded {stats.uploadToStrava} of {stats.allStrava} Strava activities ({stats.uploadToStrava*100/stats.allStrava}%)");
-    l.Information($"Uploaded and updated {stats.uploadedAndUpdatedToStrava} of {stats.allStrava} Strava activities ({stats.uploadedAndUpdatedToStrava*100/stats.allStrava}%)");
+    l.Information($"Uploaded {stats.uploadToStrava} of {stats.allStrava} Strava activities ({stats.uploadToStrava * 100 / stats.allStrava}%)");
+    l.Information($"Uploaded and updated {stats.uploadedAndUpdatedToStrava} of {stats.allStrava} Strava activities ({stats.uploadedAndUpdatedToStrava * 100 / stats.allStrava}%)");
 }

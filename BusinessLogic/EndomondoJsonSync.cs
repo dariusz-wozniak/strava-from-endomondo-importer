@@ -9,10 +9,13 @@ public interface IEndomondoJsonSync
 public class EndomondoJsonSync : IEndomondoJsonSync
 {
     private readonly IActivitiesDataStore _activitiesDataStore;
+    private readonly IJsonParser _jsonParser;
 
-    public EndomondoJsonSync(IActivitiesDataStore activitiesDataStore)
+    public EndomondoJsonSync(IActivitiesDataStore activitiesDataStore,
+                             IJsonParser jsonParser)
     {
         _activitiesDataStore = activitiesDataStore ?? throw new ArgumentNullException(nameof(activitiesDataStore));
+        _jsonParser = jsonParser ?? throw new ArgumentNullException(nameof(jsonParser));
     }
 
     public async Task Scan(Options options, Logger logger)
@@ -29,6 +32,21 @@ public class EndomondoJsonSync : IEndomondoJsonSync
         foreach (var file in files)
         {
             var filename = Path.GetFileName(file);
+
+            var activity = activities.AsQueryable()
+                                     .FirstOrDefault(x => Path.GetFileNameWithoutExtension(x.Filename).Equals(Path.GetFileNameWithoutExtension(file)));
+
+            if (activity == null)
+            {
+                logger.Debug($"Didn't find corresponding activity {filename} in Activities Data Store, meaning - these won't be uploaded to Strava");
+                await syncStatuses.DeleteManyAsync(x => x.EndomondoFilename == filename);
+                continue;
+            }
+
+            var alreadyUpdated = syncStatuses.AsQueryable().Any(x => x.EndomondoFilename == filename &&
+                                                                     x.UpdatedInStrava);
+
+            if (alreadyUpdated) continue;
 
             string sport;
 
@@ -48,17 +66,9 @@ public class EndomondoJsonSync : IEndomondoJsonSync
                 continue;
             }
 
-            var activity = activities.AsQueryable()
-                                     .FirstOrDefault(x => Path.GetFileNameWithoutExtension(x.Filename).Equals(Path.GetFileNameWithoutExtension(file)));
-
-            if (activity == null)
-            {
-                logger.Information($"Didn't find corresponding activity {filename} in Activities Data Store, meaning - these won't be uploaded to Strava");
-                continue;
-            }
             if (activity.Status != Status.UploadAndUpdateSuccessful)
             {
-                logger.Information($"Activity is not yet updated by {nameof(StravaService)}, skipping {filename}");
+                logger.Debug($"Activity is not yet updated by {nameof(StravaService)}, skipping {filename}");
                 continue;
             }
 
@@ -67,11 +77,13 @@ public class EndomondoJsonSync : IEndomondoJsonSync
 
             if (stravaMappedActivityType == null)
             {
-                logger.Information($"NO_MATCH [{filename}] Cannot match Endomondo activity type {sport} to Strava activity type {activity.StravaActivityType}");
+                logger.Debug($"NO_MATCH [{filename}] Cannot match Endomondo activity type {sport} to Strava activity type {activity.StravaActivityType}");
             }
-            else if (string.IsNullOrWhiteSpace(activity.StravaActivityType))
+            // new - untested ⬇
+            else if (!MatchesTcxActivityType(activity.TcxActivityType, stravaMappedActivityType))
             {
-                logger.Information($"NOT_ON_STRAVA [{filename}] Activity not found on Strava");
+                logger.Information($"🎈 MISMATCH_TCX! [{filename}] Activity does not match TCX activity type {activity.TcxActivityType}. Expected {stravaMappedActivityType}");
+                needsUpdateInStrava = true;
             }
             else if (!string.Equals(activity.StravaActivityType, stravaMappedActivityType, StringComparison.OrdinalIgnoreCase))
             {
@@ -80,18 +92,19 @@ public class EndomondoJsonSync : IEndomondoJsonSync
             }
             else
             {
-                logger.Information($"MATCH [{filename}] Strava activity type {activity.StravaActivityType} match Endomondo activity type {sport}");
+                logger.Debug($"MATCH [{filename}] Strava activity type {activity.StravaActivityType} match Endomondo activity type {sport}");
             }
 
             if (needsUpdateInStrava)
             {
                 var syncStatus = new SyncStatus()
                 {
-                    Id = file.GetHashCode(),
+                    Id = filename.GetHashCode(),
                     EndomondoFilePath = file,
                     EndomondoFilename = filename,
                     EndomondoActivityType = sport,
                     StravaActivityId = activity.StravaActivityId,
+                    StravaUploadId = activity.StravaUploadId,
                     CurrentStravaActivityType = activity.StravaActivityType,
                     ExpectedStravaActivityType = stravaMappedActivityType,
                     DataStoreActivityId = activity.Id,
@@ -99,9 +112,27 @@ public class EndomondoJsonSync : IEndomondoJsonSync
                     NeedsUpdateInStrava = needsUpdateInStrava,
                 };
 
+                // Repair db:
+                var duplicates = syncStatuses.AsQueryable().Where(x => x.EndomondoFilename == filename).ToList();
+
+                if (duplicates.Any(x => x.UpdatedInStrava)) syncStatus.UpdatedInStrava = true;
+                if (duplicates.Count() > 1)
+                {
+                    await syncStatuses.DeleteManyAsync(x => x.EndomondoFilename == filename);
+                    logger.Information($"Repairing sync status for {filename}. Found {duplicates.Count()} duplicates");
+                }
+
                 await syncStatuses.ReplaceOneAsync(syncStatus.Id, syncStatus, upsert: true);
             }
         }
+    }
+
+    private bool MatchesTcxActivityType(string activityTcxActivityType, string stravaMappedActivityType)
+    {
+        if (string.Equals(activityTcxActivityType, Sports.Other.Tcx, StringComparison.OrdinalIgnoreCase)) return false; // Update all "Other"
+        if (activityTcxActivityType == Sports.Biking.Tcx && string.Equals(stravaMappedActivityType, Sports.Biking.Strava, StringComparison.OrdinalIgnoreCase)) return true;
+        if (activityTcxActivityType == Sports.Run.Tcx && string.Equals(stravaMappedActivityType, Sports.Run.Strava, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
     }
 
     public async Task<bool> Update(Options options, Logger logger, string accessToken)
@@ -109,12 +140,52 @@ public class EndomondoJsonSync : IEndomondoJsonSync
         using var syncStatusDataStore = GetSyncStatusDataStore(options);
         var syncStatuses = syncStatusDataStore.GetCollection<SyncStatus>();
 
-        var needsUpdate = syncStatuses.AsQueryable().Where(x => x.NeedsUpdateInStrava == true).ToList();
-        logger.Information("Found {NeedsUpdateCount} activities that needs to be updated in Strava (clear gear ID, etc.)", needsUpdate.Count);
+        var needsUpdate = syncStatuses.AsQueryable().Where(x => x.NeedsUpdateInStrava == true &&
+                                                                !x.UpdatedInStrava).ToList();
+        logger.Information("Found {NeedsUpdateCount} activities that needs to be updated in Strava (activity type Endomondo vs. Strava mismatched)", needsUpdate.Count);
 
         foreach (var syncStatus in needsUpdate.Take(BatchSizeForEndomondoActivitySync))
         {
-            await Api.AppendPathSegments("activities", syncStatus.StravaActivityId)
+            string activityId = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(syncStatus.StravaActivityId))
+            {
+                if (string.IsNullOrWhiteSpace(syncStatus.StravaUploadId)) throw new Exception($"StravaActivityId and StravaUploadId for JSON {syncStatus.EndomondoFilename} are both null");
+
+                var upload = await Api.AppendPathSegments("uploads", syncStatus.StravaUploadId)
+                                      .WithOAuthBearerToken(accessToken)
+                                      .GetStringAsync();
+
+                activityId = _jsonParser.FromJson(upload, "activity_id").ToString();
+                syncStatus.StravaActivityId = activityId;
+                if (string.IsNullOrWhiteSpace(activityId))
+                {
+                    logger.Warning($"Failed to update {syncStatus.EndomondoFilename} to Strava. Full response: {upload}");
+                    continue;
+                }
+
+                var stravaActivity = await Api.AppendPathSegments("activities", activityId)
+                                              .WithOAuthBearerToken(accessToken)
+                                              .GetStringAsync();
+
+                var sportType = _jsonParser.FromJson(stravaActivity, "sport_type").ToString();
+                syncStatus.CurrentStravaActivityType = sportType;
+                if (string.Equals(sportType, syncStatus.ExpectedStravaActivityType, StringComparison.OrdinalIgnoreCase))
+                {
+                    syncStatus.UpdatedInStrava = true;
+                    syncStatus.NeedsUpdateInStrava = false;
+                    syncStatus.StravaActivityId = activityId;
+                    syncStatus.Message = "sport type matches";
+                    await syncStatuses.ReplaceOneAsync(syncStatus.Id, syncStatus, upsert: true);
+                    continue;
+                }
+            }
+            else
+            {
+                activityId = syncStatus.StravaActivityId;
+            }
+
+            await Api.AppendPathSegments("activities", activityId)
                      .WithOAuthBearerToken(accessToken)
                      .PutJsonAsync(new
                      {

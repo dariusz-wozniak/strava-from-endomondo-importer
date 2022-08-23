@@ -13,10 +13,10 @@ public class Options
 
     [Option("clientsecret", Required = true, HelpText = "Strava client secret.")]
     public string ClientSecret { get; set; }
-    
+
     [Option('s', "skipscan", Required = false, HelpText = "Set to true if you want to skip scanning files.")]
     public bool SkipScanning { get; set; }
-    
+
     [Option('j', "jsonsync", Required = false, HelpText = "Scans for Endomondo JSON files for Strava vs. Endomondo activity type mismatches.")]
     public bool SyncWithEndomondoJsons { get; set; }
 }
